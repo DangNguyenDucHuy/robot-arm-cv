@@ -1,0 +1,22 @@
+# Frontend
+node_modules/
+.next/
+out/
+.env
+.env.local
+.env.*.local
+npm-debug.log*
+.DS_Store
+*.pem
+.idea/
+.vscode/
+
+# Backend
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+.venv
+

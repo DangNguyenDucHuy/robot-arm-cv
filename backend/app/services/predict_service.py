@@ -3,7 +3,7 @@ from typing import List
 
 from ultralytics import YOLO
 
-from app.core.config import POSE_MODEL_PATH, HAND_MODEL_PATH
+from app.core.config import POSE_MODEL_PATH, HAND_MODEL_PATH, BOTH_MODEL_PATH
 
 DEVICE = 'cpu'
 IMAGE_SIZE = 640
@@ -14,6 +14,7 @@ class PredictService():
     def __init__(self):
         self.pose_model = YOLO(POSE_MODEL_PATH)
         self.hand_model = YOLO(HAND_MODEL_PATH)
+        self.both_model = YOLO(BOTH_MODEL_PATH)
     
 
     def detect_keypoints(self, model, image) -> List[List[float]]:
@@ -126,5 +127,23 @@ class PredictService():
             # Predict hand using hand model (5 fingers)
             hand_kps = self.detect_keypoints(self.hand_model, cropped_image)
             keypoints.extend(hand_kps)
+        
+        return keypoints
+
+
+    def predict_both(self, image):
+        """
+        Run inference on an image to detect keypoints.  
+        Keypoints: Full arm (shoulder, elbow, wrist and 5 fingertips).  
+        Desired shape: [8, 3].  
+        
+        Params:
+            image: Shape (height, width, 3)
+
+        Returns:
+            keypoints (list(list(float))): List of keypoints (x, y, visibility).
+        """
+        # Predict arm using both model (shoulder, elbow, wrist and 5 fingertips)
+        keypoints = self.detect_keypoints(self.both_model, image)
         
         return keypoints

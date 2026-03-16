@@ -73,7 +73,7 @@ class VideoService:
                 # Debug
                 start_time = time.time()
                 
-                keypoints = self.predictor.predict(frame)
+                keypoints = self.predictor.predict_both(frame)
                 annotated = draw_keypoints(frame.copy(), keypoints)
                 
                 self.keypoints = keypoints

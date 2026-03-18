@@ -9,30 +9,41 @@ router = APIRouter()
 
 
 def mjpeg_generator():
-    while True:
-        # frame = video_service.annotated if video_service.annotated is not None else video_service.frame
-        frame = video_service.annotated 
-        
-        if frame is None:
-            # Debug
-            print("Frame failed")
-            time.sleep(0.01)
-            continue
+    try:
+        while True:
+            with video_service.lock:
+                frame = (
+                    video_service.annotated.copy()
+                    if video_service.annotated is not None
+                    else video_service.frame.copy() if video_service.frame is not None else None
+                )
+            
+            if frame is None:
+                # Debug
+                print("Frame failed")
+                time.sleep(0.01)
+                continue
 
 
-        success, buffer = cv2.imencode(".jpg", frame)
+            success, buffer = cv2.imencode(".jpg", frame)
 
-        if not success:
-            # Debug
-            print("Encoding failed")
-            continue
+            if not success:
+                # Debug
+                print("Encoding failed")
+                continue
 
-        yield (
-            b"--frame\r\n"
-            b"Content-Type: image/jpeg\r\n\r\n" +
-            buffer.tobytes() +
-            b"\r\n"
-        )
+            yield (
+                b"--frame\r\n"
+                b"Content-Type: image/jpeg\r\n\r\n" +
+                buffer.tobytes() +
+                b"\r\n"
+            )
+            
+            # Limit FPS to save CPUs...
+            time.sleep(0.03)
+            
+    except GeneratorExit:
+        print("Client disconnected")
 
 
 @router.get("/stream")
@@ -45,7 +56,9 @@ def stream():
 
 @router.post("/stream/start")
 def start_stream(url: str = Query(...)):
-    video_service.start(url)
+    if not video_service.running:
+        # Start video
+        video_service.start(url)
 
     return {
         "status": "connected",
@@ -55,6 +68,7 @@ def start_stream(url: str = Query(...)):
 
 @router.post("/stream/stop")
 def stop_stream():
+    # Stop capturing
     video_service.stop()
     
     return {
@@ -65,17 +79,21 @@ def stop_stream():
 
 @router.get("/keypoints")
 def keypoints():
+    with video_service.lock:
+        frame = video_service.frame.copy() if video_service.frame is not None else None
+        keypoints = video_service.keypoints
+    
     # Post-process keypoints
     ret_kps = []
     
-    if video_service.keypoints is not None:
+    if frame is not None and keypoints is not None:
         # Denormalize
-        height, width, _ = video_service.frame.shape
+        height, width, _ = frame.shape
 
         # Format
         ret_kps = [
             { "x": x * width, "y": y * height, "v": v } 
-            for x, y, v in video_service.keypoints
+            for x, y, v in keypoints
         ]
     
     return {

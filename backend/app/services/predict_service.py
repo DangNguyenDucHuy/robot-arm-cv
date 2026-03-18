@@ -6,7 +6,7 @@ from ultralytics import YOLO
 from app.core.config import POSE_MODEL_PATH, HAND_MODEL_PATH, BOTH_MODEL_PATH
 
 DEVICE = 'cpu'
-IMAGE_SIZE = 640
+IMAGE_SIZE = 320
 CONFIDENT_THRESHOLD = 0.3
 
 

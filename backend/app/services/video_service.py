@@ -150,9 +150,8 @@ class VideoService:
                 self.annotated = annotated
             
     
-    def control_loop(self):
+    def control_loop(self, interval: float = 0.5):
         last_send = 0
-        interval = 0.1  # limit rate (10 Hz)
         
         # Wait Arduino reset
         time.sleep(2)

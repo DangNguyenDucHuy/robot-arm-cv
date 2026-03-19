@@ -21,7 +21,7 @@ def mjpeg_generator():
             if frame is None:
                 # Debug
                 print("Frame failed")
-                time.sleep(0.01)
+                time.sleep(1)
                 continue
 
 

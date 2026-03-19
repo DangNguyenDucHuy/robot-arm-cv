@@ -4,7 +4,7 @@ import threading
 from typing import TypedDict
 
 from app.core.config import MCU, SERIAL_PORT, BAUD_RATE, SERVO_LIMIT, PREDICTION_LIMIT
-from app.utils import normalize_angle, compute_arm_angles, compute_hand_grip
+from app.utils import normalize_angle, compute_arm_angles, compute_hand_grip, compute_base_direction
 
 class MessageType(TypedDict):
     base: float 
@@ -77,6 +77,7 @@ class McuServoController():
             
             command = f"{normalized_base};{normalized_shoulder};{normalized_elbow};{normalized_grip}\n"
             
+            # Control thread
             with self.lock:
                 try:
                     self.mcu.write(command.encode('utf-8'))
@@ -98,7 +99,7 @@ class McuServoController():
         if self.mcu and self.mcu.is_open:
             response = self.mcu.readline().decode().strip()
             if response:
-                print("[Info] Arduino says:", response)
+                print(f"[Info] {self.mcu_name} says:", response)
             else:
                 print("[Error] No data received from Arduino.")
     
@@ -122,11 +123,19 @@ class McuServoController():
         
         # Grip angle
         grip_angle = compute_hand_grip(keypoints[3:8], keypoints[2], keypoints[1])
+
+        # Base angle
+        base_angle = compute_base_direction(
+            keypoints[3:8], keypoints[2],
+            current_angle=self.message['base'],
+            base_servo_limit=SERVO_LIMIT['base']
+        )
         
         # Update message
         self.message['shoulder'] = shoulder_angle
         self.message['elbow'] = elbow_angle
         self.message['grip'] = grip_angle
+        self.message['base'] = base_angle
         
         # Send message
         self.send_message()

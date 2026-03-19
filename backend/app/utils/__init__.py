@@ -1,6 +1,8 @@
 import numpy as np
 from typing import List, Tuple
 
+from app.core.config import SERVO_LIMIT
+
 def normalize_angle(cur_angle: float, servo_limit: Tuple[int, int], prediction_limit: Tuple[int, int]) -> int:
     """
     Normalize current angle (with its limit) to servo's angle.
@@ -111,3 +113,40 @@ def compute_hand_grip(
     
     return np.mean(norm_dist)
 
+
+def compute_base_direction(
+    fingers_xyv: List[List[float]], 
+    wrist_xyv: List[float], 
+    current_angle: int,
+    base_servo_limit: Tuple[int, int],
+    visibility_threshold: float = 0.5,
+    velocity: int = 5
+) -> int:
+    """
+    Gradually move base servo left/right based on finger direction.
+    """
+    fingers_xyv = np.asarray(fingers_xyv)
+    wrist_xyv = np.asarray(wrist_xyv)
+
+    # Only visible fingers
+    is_visible = fingers_xyv[:, 2] >= visibility_threshold
+    visible_fingers = fingers_xyv[is_visible]
+
+    # No fingers detected -> return to mid
+    if len(visible_fingers) == 0:
+        mid_angle = (base_servo_limit[0] + base_servo_limit[1]) // 2
+        # Gradually move to mid
+        if current_angle < mid_angle:
+            return min(current_angle + velocity, mid_angle)
+        else:
+            return max(current_angle - velocity, mid_angle)
+
+    # Compute left fingers
+    finger_vectors = visible_fingers[:, :2] - wrist_xyv[:2]
+    left_count = np.sum(finger_vectors[:, 0] < 0)
+
+    # Move gradually
+    if left_count >= 2:  # turn left
+        return min(current_angle + velocity, base_servo_limit[1])
+    else:  # turn right
+        return max(current_angle - velocity, base_servo_limit[0])

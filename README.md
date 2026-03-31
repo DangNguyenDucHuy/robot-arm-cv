@@ -1,6 +1,6 @@
 # 🤖 Robot Arm CV
 
-## 🌟 Project Title & Description
+## 🌟 Description
 
 **Project Name:** Robot Arm CV
 
@@ -8,7 +8,9 @@ This project provides a comprehensive solution for controlling a robotic arm usi
 
 ## 🚀 Demo
 
-_Demo video coming soon_
+[![Watch the video](https://img.youtube.com/vi/XOkkgYuG6wo/0.jpg)](https://www.youtube.com/watch?v=XOkkgYuG6wo)
+
+(Vietnamese version)
 
 ## ✨ Features
 
@@ -63,7 +65,7 @@ Make sure you have the following installed:
 + Edit the following fields in `.env` based on your setup:
     + `MCU_NAME`: Name of the Arduino (e.g., 'Arduino Uno' - optional).
     + `SERIAL_PORT`: The serial port your Arduino is connected to (e.g., 'COM7' on Windows, '/dev/ttyUSB0' on Linux).
-    + `BAUD_RATE`: The baud rate, which must match the `Serial.begin()` setting in your Arduino code, as my code in `hardware/arduino_robot_arm/` using `BAUD_RATE=9600`
+    + `BAUD_RATE`: The baud rate, which must match the `Serial.begin()` setting in your Arduino code, as my code in `hardware/arduino_robot_arm/` using `BAUD_RATE=9600`.
 + Ensure the Arduino IDE's Serial Monitor is closed to avoid port conflicts.
 
 _Note: I use Arduino IDE to upload the `hardware/` code_
@@ -139,8 +141,8 @@ This section details how to use the Robot Arm CV system after installation and s
 
 ### Overall Flow
 
-1.  **Start the Backend Server:** Ensure the backend is running as described in the "Backend Setup" section.
-2.  **Start the Frontend Application:** Ensure the frontend is running as described in the "Frontend Setup" section.
+1.  **Start the Backend Server:** Ensure the backend is running as described in the [Backend Setup](#backend-setup) section.
+2.  **Start the Frontend Application:** Ensure the frontend is running as described in the [Frontend Setup](#frontend-setup) section.
 3.  **Access the Web Interface:** Open your web browser and navigate to the frontend URL (e.g., `http://localhost:3000`).
 4.  **Control the Robotic Arm:** Use the controls provided in the web interface to interact with the robotic arm and view the live computer vision feed.
 
@@ -165,16 +167,16 @@ This section details how to use the Robot Arm CV system after installation and s
 
 _Note: ALl models listed were experimented in another repository of mine [1], then I chose YOLO for final production_
 
-#### 3. Data Collector
+#### 3. Data Collection
 + **Video Recorder:**
     + Define classes for gesture classification.
     + Record videos for each class using the ESP32 stream.
     + Save videos, and individual frames as images, within class-named folders (e.g., `{class_name}/raw/`).
 + **Autolabeling:**
     + Utilizes a combination of Pose and Hand models.
-    + **Layer 1 (Arm Keypoints):** Images are processed by a Pose model to predict arm keypoints (shoulder, elbow, wrist, etc.), including their x, y, and visibility features.
-    + **Layer 2 (Hand Region Cropping):** Hand-related keypoints (e.g., wrist) are used to crop the hand region from the image, often with padding, to prepare for hand keypoint detection.
-    + **Layer 3 (Finger Tip Keypoints):** The cropped hand images are processed by a Hand model to predict finger tip keypoints (thumb, index, middle, ring, pinky).
+    + **Layer 1 (Arm Keypoints):** Images are processed by a Pose model to predict arm keypoints (shoulder, elbow, wrist), including their x, y, and visibility features. I leverage the `yolov26x-pose` model to label pose (OK for this).
+    + **Layer 2 (Hand Region Cropping):** Hand-related keypoints (e.g., wrist) are used to crop the hand region from the image, with small padding to better for hand recognization, to prepare for hand keypoint detection.
+    + **Layer 3 (Finger Tip Keypoints):** I tried to process the cropped hand images by a Hand model (like `mediapipe-hand`) to predict finger tip keypoints (thumb, index, middle, ring, pinky), but they seems not too good. Finally, I pick up to about **400** cropped images, and manually label them using `LabelStudio` (self-hosted on Docker).
     + **Output:** At least 8 keypoints (shoulder, elbow, wrist, thumb, index, middle, ring, pinky) with normalized x, y, and visibility features are saved as `.csv` files in `{class_name}/autolabeled/`.
 
 _Note: This was also implemented in [1]_
@@ -220,7 +222,8 @@ The backend API is built with FastAPI. Key endpoints include:
 
 + `/health`: Health check endpoint.
 + `/stream`: WebSocket endpoint for video stream and keypoint data.
-+ `/api/serial`: Endpoints for serial communication with the robotic arm.
+
+Other endpoints are in `backend/app/routers/`
 
 ## 🗺️ Roadmap / Future Improvements
 
@@ -232,11 +235,14 @@ The backend API is built with FastAPI. Key endpoints include:
 + UI
     + Save the videos (or paths), so that robot can repeat the action later.
     + Add user authentication and personalization features.
+    + Deploy website by Docker & nginx, or just Vercel for simplicity.
 + Hardware
-    + Support more hardware. 
-    + Separate Robot Arm from laptop (by leveraging WiFi, Bluetooth, MQTT, ...)
+    + Support more devices, like running backend server on Raspberry Pi and control on mobile app.
+    + Separate Robot Arm from laptop (by sending signals via WiFi, Bluetooth, MQTT, ...)
 + Others
   + Improve error handling and logging.
+  + Database and build data pipeline.
+  + Support manually control by keyboard (already done in another repo of mine).
 
 ## 🤝 Contributing
 
@@ -254,4 +260,3 @@ This project is licensed under the [MIT License](LICENSE.md).
 
 ## Reference 
 [1] [Github Repo - Robot Arm control](https://github.com/HyuOniichan/robot-arm-control)
-[2] 
